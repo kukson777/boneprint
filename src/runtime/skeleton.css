@@ -1,0 +1,245 @@
+.skeleton-reveal,
+[data-skeleton] {
+  position: relative;
+}
+
+/* Margins of the content stay inside, so they count in the height and in the remembered shape.
+   A percent height does nothing until the root has a height, so <Skeleton class="h-full"> just fills. */
+.skeleton-reveal > div,
+[data-skeleton-ghost] {
+  display: flow-root;
+  height: 100%;
+}
+
+[data-skeleton] {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Laid out for real so the shape is exact, and never seen. Surfaces like cards stay. */
+[data-skeleton-ghost],
+[data-skeleton-ghost] * {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  text-decoration-color: transparent !important;
+  /* Transparent, not removed: the scrollbar's width has to stay so lines wrap as they will in the content */
+  scrollbar-color: transparent transparent !important;
+}
+
+[data-skeleton-ghost] ::placeholder {
+  color: transparent !important;
+}
+
+[data-skeleton-ghost] :is(img, video, canvas, svg, picture, iframe, input, textarea, select, [data-skeleton-block], [data-skeleton-covered]) {
+  visibility: hidden !important;
+}
+
+[data-skeleton-layer] {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  animation: var(--skeleton-pulse, none) 1.8s ease-in-out infinite;
+}
+
+[data-skeleton-layer] i {
+  position: absolute;
+  overflow: hidden;
+  background: var(--skeleton-color, rgb(128 128 128 / 0.2));
+}
+
+/* A transform runs on the compositor, a moving mask or background repaints every frame.
+   Each band is layer-wide and offset by its bone, so all of them read as one sweep. */
+[data-skeleton-layer] i::after,
+[data-skeleton-box]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--x) * -1);
+  width: 100cqw;
+  background: linear-gradient(100deg, transparent 35%, var(--skeleton-highlight, rgb(255 255 255 / 0.4)) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: var(--skeleton-shimmer, skeleton-shimmer) 1.8s linear infinite;
+  animation-delay: calc(var(--p, 0ms) * -1);
+}
+
+[data-skeleton-box] {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: middle;
+  border-radius: var(--skeleton-radius, 5px);
+  background: var(--skeleton-color, rgb(128 128 128 / 0.2));
+}
+
+[data-skeleton-box]::after {
+  left: 0;
+  width: 100%;
+}
+
+/* A photo still on its way once the content is up. Pulses on the compositor until it has loaded. */
+[data-skeleton-image] {
+  background-color: var(--skeleton-color, rgb(128 128 128 / 0.2));
+  animation: skeleton-pulse 1.8s ease-in-out infinite;
+}
+
+/* Remembered frames and dividers: outlines of the layout, so they don't shimmer */
+[data-skeleton-layer] i[data-line]::after {
+  content: none;
+}
+
+/* In the border's own colour, so a divider doesn't change when the content comes in */
+[data-skeleton-layer] i[data-line='line'] {
+  background: var(--skeleton-line-color, var(--skeleton-own-color, var(--skeleton-color, rgb(128 128 128 / 0.2))));
+}
+
+[data-skeleton-layer] i[data-line='box'] {
+  box-sizing: border-box;
+  border: 1px solid var(--skeleton-line-color, var(--skeleton-own-color, var(--skeleton-color, rgb(128 128 128 / 0.2))));
+  background: none;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-enter-active,
+.skeleton-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+/* Out of flow while leaving, so the content takes its place without a jump. */
+.skeleton-leave-active {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+.skeleton-enter-from,
+.skeleton-leave-to {
+  opacity: 0;
+}
+
+/* A fast response never shows a skeleton: it waits this long, and what's on screen waits with it */
+.skeleton-enter-active[data-skeleton],
+.skeleton-leave-active:not([data-skeleton]) {
+  transition-delay: var(--skeleton-hold, 150ms);
+}
+
+/* A leaving skeleton taller than the content replacing it would lie over what's below the box,
+   for as long as it fades: longer than the box takes to shrink. Cut at the bottom only, as below. */
+.skeleton-reveal:has(> [data-skeleton].skeleton-leave-active) {
+  clip-path: inset(-100vmax -100vmax 0 -100vmax);
+}
+
+/* Old content leaves quickly. Cut at the bottom only, where the box may be shrinking under it:
+   avatars and buttons often reach above the box on negative margins. */
+.skeleton-leave-active:not([data-skeleton]) {
+  clip-path: inset(-100vmax -100vmax 0 -100vmax);
+  transition-property: opacity, filter;
+  transition-duration: 180ms;
+}
+
+/* The blur keeps old text from reading on top of the bones while the two crossfade */
+.skeleton-leave-to:not([data-skeleton]) {
+  filter: blur(3px);
+}
+
+/* The same wait for a skeleton that mounts with the page, where no transition runs */
+.skeleton-hold {
+  animation: skeleton-hold var(--skeleton-hold, 150ms) step-end;
+}
+
+@keyframes skeleton-hold {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Sweep and sequence move the panes themselves */
+[data-skeleton-reveal] .skeleton-enter-active,
+[data-skeleton-reveal] .skeleton-leave-active {
+  transition: none;
+}
+
+[data-skeleton-reveal] .skeleton-enter-from,
+[data-skeleton-reveal] .skeleton-leave-to {
+  opacity: 1;
+}
+
+.skeleton-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Debug overlay */
+[data-skeleton-status='loading'] {
+  --skeleton-debug: #2563eb;
+}
+
+[data-skeleton-status='still'] {
+  --skeleton-debug: #16a34a;
+}
+
+[data-skeleton-status='moved'] {
+  --skeleton-debug: #dc2626;
+}
+
+[data-skeleton-status] {
+  outline: 1px dashed var(--skeleton-debug);
+  outline-offset: -1px;
+}
+
+/* Inside the box: cards with overflow hidden would cut off a label placed above it.
+   In the right corner, away from where a line of text starts, and gone under the pointer. */
+[data-skeleton-report]::before {
+  content: attr(data-skeleton-report);
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 0 0 0 4px;
+  background: var(--skeleton-debug);
+  color: #fff;
+  font: 500 11px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+[data-skeleton-report]:hover::before {
+  opacity: 0;
+}
+
+[data-skeleton-xray] [data-skeleton-ghost] * {
+  color: rgb(220 38 38 / 0.75) !important;
+  -webkit-text-fill-color: rgb(220 38 38 / 0.75) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-skeleton-layer],
+  [data-skeleton-layer] i::after,
+  [data-skeleton-box]::after,
+  [data-skeleton-image],
+  .skeleton-hold {
+    animation: none;
+  }
+
+  .skeleton-enter-active,
+  .skeleton-leave-active {
+    transition: none;
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "name": "boneprint",
+  "version": "0.1.0",
+  "description": "Skeletons measured from your real markup, for Nuxt and Vue.",
+  "license": "MIT",
+  "author": "Ernest Manukyan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kukson777/boneprint.git"
+  },
+  "homepage": "https://kukson777.github.io/boneprint/",
+  "bugs": "https://github.com/kukson777/boneprint/issues",
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "vue",
+    "skeleton",
+    "loading",
+    "placeholder",
+    "ssr"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/vue.d.ts",
+      "import": "./dist/runtime/vue.js"
+    },
+    "./nuxt": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/module.mjs"
+    },
+    "./resolver": {
+      "types": "./dist/runtime/resolver.d.ts",
+      "import": "./dist/runtime/resolver.js"
+    }
+  },
+  "main": "./dist/runtime/vue.js",
+  "files": [
+    "dist"
+  ],
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "dev": "nuxi dev playground",
+    "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
+    "build": "nuxt-module-build build",
+    "prepack": "nuxt-module-build build",
+    "test": "vitest run",
+    "docs:dev": "pnpm --filter boneprint-docs dev",
+    "docs:build": "pnpm --filter boneprint-docs generate",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p playground/.nuxt/tsconfig.app.json"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^4.6.4"
+  },
+  "devDependencies": {
+    "@nuxt/module-builder": "^1.0.4",
+    "@nuxt/schema": "^4.6.4",
+    "@nuxt/test-utils": "^4.4.0",
+    "nuxt": "^4.6.4",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}
