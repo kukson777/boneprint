@@ -1,4 +1,4 @@
-import { getCurrentInstance, type InjectionKey } from 'vue'
+import { defineComponent, getCurrentInstance, inject, provide, type InjectionKey } from 'vue'
 
 export type Reveal = 'fade' | 'sequence' | 'sweep'
 export type BoneprintOptions = { persist: boolean, debug: boolean, reveal: Reveal }
@@ -35,6 +35,17 @@ export const counter = () => {
 }
 
 const spaPlace = counter()
+
+const ghostKey: InjectionKey<boolean> = Symbol('boneprint-ghost')
+
+/** True inside the copy of the slot a skeleton is measured from: skip what it shouldn't do twice, like requests or observers. */
+export const useInSkeleton = () => inject(ghostKey, false)
+
+/** Wraps that copy. Renders nothing of its own. */
+export const SkeletonGhost = defineComponent((_, { slots }) => {
+  provide(ghostKey, true)
+  return () => slots.default?.()
+})
 
 /** A Vue app with no server: nothing to hydrate, and the router, if any, knows the page. */
 export const spaContext = (options: Partial<BoneprintOptions> = {}): BoneprintContext => ({

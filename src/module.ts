@@ -15,5 +15,6 @@ export default defineNuxtModule<BoneprintOptions>({
     addComponent({ name: 'SkeletonBox', filePath: resolve('./runtime/SkeletonBox.vue') })
     addComponent({ name: 'SkeletonSuspense', filePath: resolve('./runtime/SkeletonSuspense.vue') })
     addImports({ name: 'forgetSkeletons', from: resolve('./runtime/memory') })
+    addImports({ name: 'useInSkeleton', from: resolve('./runtime/context') })
   },
 })

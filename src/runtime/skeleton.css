@@ -95,6 +95,11 @@
   background: var(--skeleton-line-color, var(--skeleton-own-color, var(--skeleton-color, rgb(128 128 128 / 0.2))));
 }
 
+/* A remembered card or panel, in its own colour: the bones on it are drawn after it, so on top */
+[data-skeleton-layer] i[data-line='fill'] {
+  background: var(--skeleton-own-color);
+}
+
 [data-skeleton-layer] i[data-line='box'] {
   box-sizing: border-box;
   border: 1px solid var(--skeleton-line-color, var(--skeleton-own-color, var(--skeleton-color, rgb(128 128 128 / 0.2))));

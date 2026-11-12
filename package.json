@@ -1,6 +1,6 @@
 {
   "name": "boneprint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Skeletons measured from your real markup, for Nuxt and Vue.",
   "license": "MIT",
   "author": "Ernest Manukyan",
@@ -57,6 +57,7 @@
     "@nuxt/schema": "^4.6.4",
     "@nuxt/test-utils": "^4.4.0",
     "nuxt": "^4.6.4",
+    "playwright-core": "^1.65.0",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0",
     "vue-tsc": "^3.3.14"

@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T">
 import { computed, getCurrentInstance, inject, onBeforeUnmount, ref, unref, watch, type MaybeRef } from 'vue'
-import { boneprintKey, spaContext, type Reveal } from './context'
+import { boneprintKey, SkeletonGhost, spaContext, type Reveal } from './context'
 import { bootScript, recall, skeletonEngine, type SkeletonRoot } from './engine'
 import { memoryEpoch, remember } from './memory'
 
@@ -50,29 +50,35 @@ const driven = computed(() => !!props.of || 'data' in (instance.vnode.props ?? {
 const data = computed(() => props.of ? unref(props.of.data) : props.data)
 const error = computed(() => props.error ?? (props.of ? unref(props.of.error) : undefined))
 
+const blank = (value: unknown) => value == null || (Array.isArray(value) && !value.length)
+
 // ponytail: 'idle' counts as loading, because server:false renders idle on the server and that's
 // exactly when a skeleton is wanted. With immediate:false, pass :empty until execute() is called.
+const settled = computed(() => !props.of || ['success', 'error'].includes(unref(props.of.status)))
+
 const empty = computed(() => {
   if (props.empty !== undefined) return props.empty
-  const value = data.value
   // Without this a successful null would shimmer forever
-  return !!props.of && unref(props.of.status) === 'success' && (value == null || (Array.isArray(value) && !value.length))
+  return !!props.of && unref(props.of.status) === 'success' && blank(data.value)
 })
+
+// No answer yet. An empty list counts while loading: it's the data layer's placeholder (`data ?? []`, `default: () => []`), not the answer
+const missing = computed(() => data.value == null || (blank(data.value) && (!!props.loading || !settled.value)))
 
 const state = computed(() => {
   if (props.loading) return 'skeleton'
   if (error.value) return 'error'
   if (empty.value) return 'empty'
-  return driven.value && data.value == null ? 'skeleton' : 'content'
+  return driven.value && missing.value ? 'skeleton' : 'content'
 })
 
 // During hydration the DOM must match the server's; the boot script has already applied the shape
 const shape = computed(() =>
-  client && persist && state.value === 'skeleton' && data.value == null && !config.hydrating()
+  client && persist && state.value === 'skeleton' && missing.value && !config.hydrating()
     ? recall(memoryId.value)
     : null)
 
-const ghostData = computed(() => (data.value ?? props.sample) as T)
+const ghostData = computed(() => (missing.value ? props.sample : data.value) as T)
 const hasGhost = computed(() => !driven.value || ghostData.value != null)
 const FALLBACK = [100, 90, 60]
 
@@ -89,9 +95,12 @@ if (import.meta.env?.DEV && client) {
     return value
   }
 
-  watch(data, (value) => {
-    if (value != null && driven.value && props.sample == null) console.info('[boneprint] No sample, so the first load has nothing to measure. Paste this as :sample', JSON.stringify(sketch(value), null, 2))
-  }, { once: true })
+  // Once, on the first real answer: an empty placeholder list before it would make a useless sample
+  const stop = watch(data, (value) => {
+    if (blank(value)) return
+    stop()
+    if (driven.value && props.sample == null) console.info('[boneprint] No sample, so the first load has nothing to measure. Paste this as :sample', JSON.stringify(sketch(value), null, 2))
+  })
 }
 
 const pane = ref<SkeletonRoot | null>(null)
@@ -121,7 +130,7 @@ watch(pane, (root, previous) => {
   root.skeletonLive = true
   root.skeletonShape = shape.value ?? root.skeletonShape
   live.add(root)
-  source = root.skeletonShape ? 'memory' : data.value != null ? 'data' : props.sample != null ? 'sample' : driven.value ? 'generic lines' : 'slot'
+  source = root.skeletonShape ? 'memory' : !missing.value ? 'data' : props.sample != null ? 'sample' : driven.value ? 'generic lines' : 'slot'
   report('loading', `loading · ${source}`)
   observer.observe(root)
   root.addEventListener('load', onLoad, true)
@@ -274,7 +283,9 @@ watch(state, (next, previous) => {
       <div v-else-if="state === 'skeleton'" key="skeleton" ref="pane" data-skeleton :class="{ 'skeleton-hold': holdFirst }" :data-skeleton-id="persist ? memoryId : undefined" aria-hidden="true" inert :style="shape ? { minHeight: `${shape.height}px` } : undefined">
         <div data-skeleton-ghost>
           <template v-if="!shape">
-            <slot v-if="hasGhost" :data="ghostData" />
+            <SkeletonGhost v-if="hasGhost">
+              <slot :data="ghostData" />
+            </SkeletonGhost>
 
             <template v-else>
               <div v-for="width in FALLBACK" :key="width" data-skeleton-block :style="{ width: `${width}%`, height: '0.75em', margin: '0.5em 0' }" />

@@ -51,4 +51,18 @@ describe('server render', async () => {
     expect(section(html, 'empty')).toContain('No posts')
     expect(section(html, 'failed')).toContain('Failed to load')
   })
+
+  it('measures the sample, not an empty placeholder list, while loading', () => {
+    expect(section(html, 'waiting')).toContain('data-skeleton-ghost')
+    expect(section(html, 'waiting')).toContain('A sample post title')
+    // useFetch with default: () => [] is still loading, not empty
+    expect(section(html, 'placeholder')).toContain('data-skeleton-ghost')
+    expect(section(html, 'placeholder')).toContain('A sample post title')
+  })
+
+  it('tells a component whether it is in the measured copy', () => {
+    expect(section(html, 'ghost-flag')).toContain('in the ghost')
+    expect(section(html, 'live-flag')).toContain('live')
+    expect(section(html, 'live-flag')).not.toContain('in the ghost')
+  })
 })

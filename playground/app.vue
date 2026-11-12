@@ -35,6 +35,23 @@ const signOut = () => {
   forgetSkeletons()
   signedIn.value = false
 }
+
+// The data layer's placeholder list while loading, both by hand and from useFetch
+const placeholder = useFetch<Post[]>('/api/posts?slow=3', { server: false, lazy: true, default: () => [] })
+
+// Saved with its fill, then loading again with an empty list: drawn from memory
+const surfaceData = ref<string[]>(['Card'])
+const surfaceLoading = ref(false)
+const reloadSurface = () => {
+  surfaceData.value = []
+  surfaceLoading.value = true
+}
+
+// A CSS icon the way iconify draws one: currentColor through a mask, which the ghost makes transparent
+const maskIcon = 'display: inline-block; width: 20px; height: 20px; background-color: currentColor; mask-image: linear-gradient(#000, #000)'
+
+// Over a pixel higher than its neighbour, so it sorts first even though it's further right
+const higherColumn = 'font-size: 11px; position: relative; top: -1.2px'
 </script>
 
 <template>
@@ -153,6 +170,64 @@ const signOut = () => {
       <Skeleton id="private-shape" :persist="false" :data="['Not remembered']" v-slot="{ data }">
         <p>{{ data[0] }}</p>
       </Skeleton>
+    </section>
+
+    <section id="waiting">
+      <Skeleton :data="[] as Post[]" :loading="true" :sample v-slot="{ data }">
+        <p v-for="post in data" :key="post.id">{{ post.title }}</p>
+      </Skeleton>
+    </section>
+
+    <section id="placeholder">
+      <Skeleton :of="placeholder" :sample v-slot="{ data }">
+        <p v-for="post in data" :key="post.id">{{ post.title }}</p>
+      </Skeleton>
+    </section>
+
+    <section id="ghost-flag">
+      <Skeleton :loading="true">
+        <GhostProbe />
+      </Skeleton>
+    </section>
+
+    <section id="live-flag">
+      <Skeleton :data="['Content']">
+        <GhostProbe />
+      </Skeleton>
+    </section>
+
+    <section id="screen-reader">
+      <Skeleton :loading="true">
+        <p>Rating</p>
+
+        <span style="position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap">Read to screen readers only</span>
+      </Skeleton>
+    </section>
+
+    <section id="icon">
+      <Skeleton :loading="true">
+        <span :style="maskIcon" />
+      </Skeleton>
+    </section>
+
+    <section id="columns">
+      <Skeleton :loading="true">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <span style="font-size: 12px">Emerald · 10 first</span>
+
+          <span :style="higherColumn">Exp</span>
+        </div>
+      </Skeleton>
+    </section>
+
+    <section id="surface">
+      <Skeleton id="surface-shape" :data="surfaceData" :loading="surfaceLoading">
+        <div style="background: rgb(10, 20, 30); color: #fff; padding: 16px; border-radius: 8px">
+          <p>A card on its own surface</p>
+        </div>
+      </Skeleton>
+
+      <button id="surface-reload" @click="reloadSurface">Reload</button>
     </section>
   </main>
 </template>

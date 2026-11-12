@@ -8,6 +8,7 @@ import SkeletonSuspense from './SkeletonSuspense.vue'
 
 export { Skeleton, SkeletonBox, SkeletonSuspense }
 export { forgetSkeletons } from './memory'
+export { useInSkeleton } from './context'
 export type { BoneprintOptions, Reveal } from './context'
 
 /** `app.use(boneprint, options)`: registers the components globally and sets the defaults. Optional: imported or auto-imported, they work without it. */

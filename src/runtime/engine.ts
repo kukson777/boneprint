@@ -1,5 +1,5 @@
-/** A `kind` marks a remembered frame or divider, which has no real element behind it to show through. Its `color` is the border's own. */
-export type Bone = [x: number, y: number, width: number, height: number, radius: string, kind?: 'box' | 'line', color?: string]
+/** A `kind` marks a remembered frame, divider or surface, which has no real element behind it to show through. Its `color` is the element's own. */
+export type Bone = [x: number, y: number, width: number, height: number, radius: string, kind?: 'box' | 'line' | 'fill', color?: string]
 export type Shape = { height: number, vw: number, bones: Bone[] }
 export type SkeletonRoot = HTMLElement & { skeletonLive?: boolean, skeletonShape?: Shape | null }
 type Clip = { left: number, right: number, top: number, bottom: number } | null
@@ -96,6 +96,12 @@ export function skeletonEngine(document: Document) {
       const bottom = edge(style.borderBottomWidth, style.borderBottomColor)
       const sides = edge(style.borderLeftWidth, style.borderLeftColor) && edge(style.borderRightWidth, style.borderRightColor)
 
+      // A card's own fill: the ghost shows it on a first visit, so a remembered shape has to as well.
+      // Chips never get here, they are blocks. ponytail: the colour only, a gradient or image surface needs data-skeleton-block.
+      // Cut like text and blocks: a card scrolled past the edge of a row would be drawn outside the box
+      const area = rect.height > 2 && !clear(style.backgroundColor) ? cut(rect, clip) : null
+      if (area) bones.push([area.left - origin.left, area.top - origin.top, area.right - area.left, area.bottom - area.top, style.borderRadius, 'fill', style.backgroundColor])
+
       // The border's own colour, so a divider looks the same before and after loading.
       // ponytail: the computed colour, so one remembered in the dark theme stays dark in the light one until the next save.
       const ringColor = ring(style)
@@ -141,7 +147,9 @@ export function skeletonEngine(document: Document) {
         // Table parts are excluded: striped cells touch, and would read as one gray rectangle.
         // No text needed: an icon button or a status dot is drawn too. Above 2px, so thin separators stay lines.
         const chip = !BLOCKS.has(element.localName) && !/^t(able|head|body|foot|r|d|h)$/.test(element.localName) && painted(style) && element.offsetHeight > 2 && element.offsetHeight <= size * 3.2
-        if (BLOCKS.has(element.localName) || chip || element.hasAttribute('data-skeleton-block')) {
+        // A CSS icon (iconify, Nuxt UI): currentColor through a mask, and the ghost's text colour is transparent
+        const icon = [style.maskImage, style.webkitMaskImage].some(mask => mask && mask !== 'none')
+        if (BLOCKS.has(element.localName) || icon || chip || element.hasAttribute('data-skeleton-block')) {
           block(element, style, clip)
           // Only when missing: the skeleton repaints on mutations, and a repeat write would loop
           if (mark && chip && !element.hasAttribute('data-skeleton-covered')) element.setAttribute('data-skeleton-covered', '')
@@ -152,23 +160,33 @@ export function skeletonEngine(document: Document) {
         if (!mark) frame(element, style, clip)
 
         const clips = style.overflowX !== 'visible' || style.overflowY !== 'visible'
-        walk(element, clips ? (cut(element.getBoundingClientRect(), clip) ?? clip) : clip)
+        if (!clips) {
+          walk(element, clip)
+          continue
+        }
+        // Nothing left inside: a 1px .sr-only box, or one scrolled out of its parent. What's in it isn't seen.
+        const inner = cut(element.getBoundingClientRect(), clip)
+        if (inner) walk(element, inner)
       }
     }
     walk(scope, null)
 
-    // Runs of one line share a baseline, so a sort leaves them next to each other
-    lines.sort((a, b) => Math.round(a.baseline) - Math.round(b.baseline) || a.left - b.left)
-    let last: Line | undefined
+    // Runs of one line share a baseline. A row is every baseline within 2px of its first, put in order
+    // left to right before merging: sorted by baseline alone, a column a pixel higher came first and swallowed its left neighbour
+    lines.sort((a, b) => a.baseline - b.baseline)
     const bars: Line[] = []
-    for (const line of lines) {
-      if (last && Math.abs(last.baseline - line.baseline) < 2 && line.left - last.right <= Math.max(last.size, line.size) * 0.4) {
-        last.right = Math.max(last.right, line.right)
-        last.top = Math.min(last.top, line.top)
-        last.bottom = Math.max(last.bottom, line.bottom)
-      }
-      else {
-        bars.push(last = line)
+    for (let start = 0, end = 0; start < lines.length; start = end) {
+      while (end < lines.length && lines[end]!.baseline - lines[start]!.baseline < 2) end++
+      let last: Line | undefined
+      for (const line of lines.slice(start, end).sort((a, b) => a.left - b.left)) {
+        if (last && line.left - last.right <= Math.max(last.size, line.size) * 0.4) {
+          last.right = Math.max(last.right, line.right)
+          last.top = Math.min(last.top, line.top)
+          last.bottom = Math.max(last.bottom, line.bottom)
+        }
+        else {
+          bars.push(last = line)
+        }
       }
     }
     for (const { left, right, top, bottom, size } of bars) {

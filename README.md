@@ -25,7 +25,7 @@ The approach is inspired by [skullet](https://github.com/lochie/skullet).
 - **Measured, not drawn by hand.** The skeleton is your own template rendered with sample data, laid out by the browser and turned into bones.
 - **Remembers the shape.** Geometry is stored per skeleton in `localStorage` and applied on the next visit, before the first paint with server rendering.
 - **Understands your data layer.** Pass a `useFetch`, `useAsyncData` or TanStack Query result to `:of` and the loading, empty and error states follow. The slot's `data` is typed.
-- **No layout shift.** Margins stay inside the block, borders and dividers keep their real colors, and the box eases to its new height when content arrives.
+- **No layout shift.** Margins stay inside the block, borders, dividers and card surfaces keep their real colors, and the box eases to its new height when content arrives.
 - **Fast responses show nothing.** A short hold keeps quick requests from flashing a skeleton, and `refresh()` keeps the data on screen.
 - **Three reveals.** `fade`, `sequence` or `sweep` when content replaces the skeleton.
 - **Plain CSS.** Themed with custom properties, dark mode included, and `prefers-reduced-motion` respected.
@@ -46,7 +46,7 @@ export default defineNuxtConfig({
 })
 ```
 
-`<Skeleton>`, `<SkeletonBox>`, `<SkeletonSuspense>` and `forgetSkeletons()` are auto-imported, and the styles are added for you.
+`<Skeleton>`, `<SkeletonBox>`, `<SkeletonSuspense>`, `forgetSkeletons()` and `useInSkeleton()` are auto-imported, and the styles are added for you.
 
 ### Vue 3 + Vite
 
@@ -118,7 +118,7 @@ const sample: Post[] = [{ id: 1, title: 'A title of about this length' }]
 The `reveal` event fires once content has replaced the skeleton. The `#skeleton` slot and `<SkeletonBox>` draw a skeleton of your own, for what doesn't measure well, like a chart. `<SkeletonSuspense>` is a Suspense boundary with a measured fallback.
 
 > [!IMPORTANT]
-> The slot mounts once for the skeleton and again for the content. Keep data fetching and subscriptions outside `<Skeleton>`.
+> The slot mounts once for the skeleton and again for the content. Keep data fetching and subscriptions outside `<Skeleton>`, or skip them where `useInSkeleton()` is `true`.
 
 ### Options
 
@@ -160,6 +160,14 @@ Everything is plain CSS, so dark mode works like the rest of your styles:
 ## Debugging
 
 Add `?skeleton-debug` to the URL, set the `debug` option, or put `data-skeleton-debug` around part of the page. Each skeleton is outlined in blue while it loads, then green if nothing moved, or red with how far it did. `data-skeleton-xray` shows the hidden markup through the bones.
+
+## For AI agents
+
+- Wrap: `<Skeleton :of="request" :sample>` with `#default="{ data }"`, `#empty` and `#error`. `request` is a `useFetch`, `useAsyncData` or TanStack Query result; without one, use `:data`, `:loading`, `:empty`, `:error`.
+- `sample` mirrors the response with text of typical length and only draws the first visit. Later visits use the shape remembered per `id`.
+- The slot mounts twice: fetch outside `<Skeleton>`, or skip it where `useInSkeleton()` is `true`.
+- Steer with `data-skeleton-block` and `data-skeleton-skip`; draw your own with the `#skeleton` slot and `<SkeletonBox>`.
+- The docs are available as [`llms.txt`](https://kukson777.github.io/boneprint/llms.txt) and [`llms-full.txt`](https://kukson777.github.io/boneprint/llms-full.txt).
 
 ## Documentation
 

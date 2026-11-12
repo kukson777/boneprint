@@ -30,5 +30,13 @@ export default defineAppConfig({
   },
   toc: {
     title: 'On this page',
+    bottom: {
+      title: 'Links',
+      links: [
+        { icon: 'i-simple-icons-github', label: 'Source on GitHub', to: 'https://github.com/kukson777/boneprint', target: '_blank' },
+        { icon: 'i-simple-icons-npm', label: 'Package on npm', to: 'https://www.npmjs.com/package/boneprint', target: '_blank' },
+        { icon: 'i-lucide-bot', label: 'llms.txt', to: 'https://kukson777.github.io/boneprint/llms.txt', target: '_blank' },
+      ],
+    },
   },
 })
