@@ -47,6 +47,8 @@ export default defineNuxtConfig({
       'Reading this documentation as an agent: /llms-full.txt contains every page in one file, and any page is also available as Markdown under /raw/<path>.md.',
     ],
   },
+  // A static host runs no server, so no /mcp: off, and out of the page menu and agent discovery
+  mcp: { enabled: false },
   // robots.txt and /.well-known only work at the root of a domain — in a subfolder they
   // are never read, and both modules refuse to build there: no robots.txt, and agent
   // discovery gets the bare origin it insists on
